@@ -1,0 +1,30 @@
+name: "Test"
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Enable debug'
+        type: boolean
+        required: false
+        default: false
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: azuwis/nix-action@main
+      with:
+        key: nix-action-${{ hashFiles('flake.*') }}
+    - uses: lhotari/action-upterm@v1
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      with:
+        limit-access-to-actor: true
+    - name: Build
+      run: |
+        nix -L build .#
+    - uses: azuwis/nix-action@post

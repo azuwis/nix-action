@@ -1,0 +1,50 @@
+name: Install Nix and setup cache
+inputs:
+  key:
+    description: Key to actions/cache
+    required: true
+runs:
+  using: composite
+  steps:
+  - uses: nixbuild/nix-quick-install-action@v26
+    with:
+      nix_conf: |
+        accept-flake-config = true
+        experimental-features = nix-command flakes
+        keep-derivations = true
+        keep-outputs = true
+  - name: Pre cache restore
+    shell: bash
+    run: |
+      mv -v /nix/store /nix/store.bak
+      mv -v /nix/var/nix/db/db.sqlite /nix/var/nix/db/db.sqlite.bak
+      echo "CACHE_KEY=${{ inputs.key }}" >> $GITHUB_ENV
+      echo "CACHE_TIMESTAMP=$(date +%s)" >> $GITHUB_ENV
+  - uses: actions/cache/restore@v3
+    with:
+      key: ${{ env.CACHE_KEY }}-${{ runner.os }}-${{ env.CACHE_TIMESTAMP }}
+      restore-keys: |
+        ${{ env.CACHE_KEY }}-${{ runner.os }}
+      path: |
+        /nix/store
+        /nix/var/nix/db/db.sqlite
+  - name: Post cache restore
+    shell: bash
+    run: |
+      if [ -e /nix/store ]
+      then
+        echo "cache hit, try to restore nix"
+        nix="$(readlink /nix/var/nix-quick-install-action/nix)"
+        "$nix/bin/nix-env" -i "$nix"
+      fi
+      if ! nix --version
+      then
+        if [ -e /nix/store ]
+        then
+          echo "cache hit, but nix changed"
+          mv -v /nix/store /nix/var/nix/db/db.sqlite /tmp
+        fi
+        mv -v /nix/store.bak /nix/store
+        mv -v /nix/var/nix/db/db.sqlite.bak /nix/var/nix/db/db.sqlite
+        echo "CACHE_NEED_UPDATE=yes" >> $GITHUB_ENV
+      fi

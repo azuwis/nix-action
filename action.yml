@@ -1,0 +1,23 @@
+name: Install Nix and setup cache (post actions)
+runs:
+  using: composite
+  steps:
+  - name: Nix GC
+    shell: bash
+    run: |
+      # create gcroots for flake inputs to prevent gc
+      flake_inputs=$(nix flake archive --json --no-write-lock-file)
+      while [[ $flake_inputs =~ /nix/store/[^\"]+ ]]
+      do
+        store_path="${BASH_REMATCH[0]}"
+        nix build --out-link "/tmp/${store_path##*/}" "$store_path"
+        flake_inputs="${flake_inputs/${store_path}/}"
+      done
+      nix-collect-garbage -d -v
+  - uses: actions/cache/save@v3
+    if: ${{ env.CACHE_NEED_UPDATE == 'yes' }}
+    with:
+      key: ${{ env.CACHE_KEY }}-${{ runner.os }}-${{ env.CACHE_TIMESTAMP }}
+      path: |
+        /nix/store
+        /nix/var/nix/db/db.sqlite

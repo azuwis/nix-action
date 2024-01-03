@@ -3,6 +3,7 @@ runs:
   using: composite
   steps:
   - name: Nix GC
+    if: ${{ env.CACHE_NEED_UPDATE == 'yes' }}
     shell: bash
     run: |
       # create gcroots for flake inputs to prevent gc

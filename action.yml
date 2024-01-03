@@ -3,6 +3,7 @@ inputs:
   key:
     description: Key to actions/cache
     required: true
+    default: nix-action
 runs:
   using: composite
   steps:

@@ -40,6 +40,7 @@ runs:
   - name: Post cache restore
     shell: bash
     run: |
+      # Post cache restore
       restore_bak() {
         echo "restore bak"
         mv -v /nix/store.bak /nix/store
@@ -70,6 +71,7 @@ runs:
     env:
       TTYD_CREDENTIAL: ${{ inputs.credential }}
     run: |
+      # Debug
       if [ -n "$TTYD_CREDENTIAL" ]
       then
         nixpkgs="https://github.com/NixOS/nixpkgs/archive/refs/tags/23.11.tar.gz"
@@ -84,6 +86,7 @@ runs:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && inputs.credential != '' }}
     shell: bash
     run: |
+      # Wait
       while [ ! -f ../continue ]
       do
         grep '|' /tmp/cloudflared.log || true

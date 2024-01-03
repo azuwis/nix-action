@@ -4,8 +4,8 @@ on:
   push:
   workflow_dispatch:
     inputs:
-      debug_enabled:
-        description: 'Enable debug'
+      debug:
+        description: Enable debug
         type: boolean
         required: false
         default: false
@@ -20,10 +20,8 @@ jobs:
     - uses: azuwis/nix-action@main
       with:
         key: nix-action-${{ hashFiles('flake.*') }}
-    - uses: lhotari/action-upterm@v1
-      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-      with:
-        limit-access-to-actor: true
+        debug: ${{ inputs.debug }}
+        credential: ${{ secrets.TTYD_CREDENTIAL }}
     - name: Build
       run: |
         nix -L build .#

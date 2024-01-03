@@ -4,6 +4,14 @@ inputs:
     description: Key to actions/cache
     required: true
     default: nix-action
+  debug:
+    description: Enable debug
+    required: false
+    default: false
+  credential:
+    description: Debug credential
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
@@ -56,3 +64,28 @@ runs:
         echo "cache miss"
         restore_bak
       fi
+  - name: Debug
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && inputs.credential != '' }}
+    shell: bash
+    env:
+      TTYD_CREDENTIAL: ${{ inputs.credential }}
+    run: |
+      if [ -n "$TTYD_CREDENTIAL" ]
+      then
+        nixpkgs="https://github.com/NixOS/nixpkgs/archive/refs/tags/23.11.tar.gz"
+        nix-env -f $nixpkgs -iA cloudflared ttyd
+        cloudflared tunnel --url http://127.0.0.1:3456 2>&1 | tee /tmp/cloudflared.log &
+        ttyd --interface 127.0.0.1 --port 3456 --writable --once --credential "$TTYD_CREDENTIAL" bash --login &
+        sleep 5
+      else
+        echo "env TTYD_CREDENTIAL is empty, skip debug"
+      fi
+  - name: Wait
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && inputs.credential != '' }}
+    shell: bash
+    run: |
+      while [ ! -f ../continue ]
+      do
+        grep '|' /tmp/cloudflared.log || true
+        sleep 5
+      done

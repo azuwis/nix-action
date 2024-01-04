@@ -65,7 +65,7 @@ runs:
         restore_bak
       fi
   - name: Debug
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && inputs.credential != '' }}
+    if: ${{ inputs.debug && inputs.credential != '' }}
     shell: bash
     env:
       TTYD_CREDENTIAL: ${{ inputs.credential }}

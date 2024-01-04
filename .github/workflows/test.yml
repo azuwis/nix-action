@@ -15,10 +15,10 @@ on:
         required: false
         default: false
       os:
-        description: OS
+        description: Debug OS
         required: true
         type: choice
-        options: [all, ubuntu-latest, macos-latest]
+        options: [ubuntu-latest, macos-latest, all]
 jobs:
   test:
     strategy:

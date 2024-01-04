@@ -65,7 +65,7 @@ runs:
         restore_bak
       fi
   - name: Debug
-    if: ${{ inputs.debug && inputs.credential != '' }}
+    if: ${{ (inputs.debug == true || inputs.debug == 'true') && inputs.credential != '' }}
     shell: bash
     env:
       TTYD_CREDENTIAL: ${{ inputs.credential }}

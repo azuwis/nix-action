@@ -1,11 +1,17 @@
 name: Install Nix and setup cache (post actions)
+inputs:
+  gc:
+    description: Nix GC
+    required: false
+    default: false
 runs:
   using: composite
   steps:
   - name: Nix GC
-    if: ${{ env.CACHE_NEED_UPDATE == 'yes' }}
+    if: ${{ env.CACHE_NEED_UPDATE == 'yes' || inputs.gc == true || inputs.gc == 'true' }}
     shell: bash
     run: |
+      # Nix GC
       # create gcroots for flake inputs to prevent gc
       flake_inputs=$(nix flake archive --json --no-write-lock-file)
       while [[ $flake_inputs =~ /nix/store/[^\"]+ ]]

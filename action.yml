@@ -14,7 +14,7 @@ runs:
         nix build --out-link "/tmp/${store_path##*/}" "$store_path"
         flake_inputs="${flake_inputs/${store_path}/}"
       done
-      nix-collect-garbage -d -v
+      nix-store --gc --print-roots --verbose
   - uses: actions/cache/save@v3
     if: ${{ env.CACHE_NEED_UPDATE == 'yes' }}
     with:

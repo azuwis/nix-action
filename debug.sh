@@ -7,10 +7,6 @@ then
   exit
 fi
 
-nix-channel --add "https://github.com/NixOS/nixpkgs/archive/refs/heads/release-23.11.tar.gz" nixpkgs
-nix-channel --update
-nix-env -f '<nixpkgs>' -iA age cloudflared ttyd
-
 ttyd_args=()
 
 if [ -n "$TTYD_CREDENTIAL" ]
@@ -26,6 +22,10 @@ then
 else
   ttyd_args=("${ttyd_args[@]}" bash --login)
 fi
+
+nix-channel --add "https://github.com/NixOS/nixpkgs/archive/refs/heads/release-23.11.tar.gz" nixpkgs
+nix-channel --update
+nix-env -f '<nixpkgs>' -iA age cloudflared ttyd
 
 ttyd --interface 127.0.0.1 --port 3456 --writable --once "${ttyd_args[@]}" &
 cloudflared tunnel --url http://127.0.0.1:3456 2>&1 | tee /tmp/cloudflared.log &

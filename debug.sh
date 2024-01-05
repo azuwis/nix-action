@@ -29,8 +29,15 @@ fi
 
 ttyd --interface 127.0.0.1 --port 3456 --writable --once "${ttyd_args[@]}" &
 cloudflared tunnel --url http://127.0.0.1:3456 2>&1 | tee /tmp/cloudflared.log &
-while [ ! -f ../continue ]
+
+until [ -f ~/continue ] || [ -f ~/skip ]
 do
   sleep 10
   grep -F '.trycloudflare.com' /tmp/cloudflared.log || true
 done
+
+if [ -f ~/skip ]
+then
+  echo "Skip, exit 1"
+  exit 1
+fi

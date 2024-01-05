@@ -1,17 +1,36 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+if [ -z "$TTYD_CREDENTIAL" ] && [ "$TTYD_LOGIN_WITH_AGE" != "true" ]
+then
+  echo "TTYD_CREDENTIAL is empty and TTYD_LOGIN_WITH_AGE not enabled, skip debug"
+  exit
+fi
+
+nix-channel --add "https://github.com/NixOS/nixpkgs/archive/refs/heads/release-23.11.tar.gz" nixpkgs
+nix-channel --update
+nix-env -f '<nixpkgs>' -iA age cloudflared ttyd
+
+ttyd_args=()
+
 if [ -n "$TTYD_CREDENTIAL" ]
 then
-  nixpkgs="https://github.com/NixOS/nixpkgs/archive/refs/heads/release-23.11.tar.gz"
-  nix-env -f $nixpkgs -iA cloudflared ttyd
-  cloudflared tunnel --url http://127.0.0.1:3456 2>&1 | tee /tmp/cloudflared.log &
-  ttyd --interface 127.0.0.1 --port 3456 --writable --once --credential "$TTYD_CREDENTIAL" bash --login &
-  while [ ! -f ../continue ]
-  do
-    sleep 10
-    grep -F '.trycloudflare.com' /tmp/cloudflared.log || true
-  done
-else
-  echo "env TTYD_CREDENTIAL is empty, skip debug"
+  ttyd_args=(--credential "$TTYD_CREDENTIAL")
 fi
+
+if [ "$TTYD_LOGIN_WITH_AGE" = "true" ]
+then
+  mkdir ~/.ttyd
+  curl -Lso ~/.ttyd/"$GITHUB_ACTOR.keys" "https://github.com/$GITHUB_ACTOR.keys"
+  ttyd_args=("${ttyd_args[@]}" "$GITHUB_ACTION_PATH/login.sh")
+else
+  ttyd_args=("${ttyd_args[@]}" bash --login)
+fi
+
+ttyd --interface 127.0.0.1 --port 3456 --writable --once "${ttyd_args[@]}" &
+cloudflared tunnel --url http://127.0.0.1:3456 2>&1 | tee /tmp/cloudflared.log &
+while [ ! -f ../continue ]
+do
+  sleep 10
+  grep -F '.trycloudflare.com' /tmp/cloudflared.log || true
+done

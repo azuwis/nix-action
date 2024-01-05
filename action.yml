@@ -8,6 +8,10 @@ inputs:
     description: Enable debug
     required: false
     default: false
+  login_with_age:
+    description: Debug login with age
+    required: false
+    default: true
   credential:
     description: Debug credential
     required: false
@@ -39,8 +43,9 @@ runs:
     shell: bash
     run: ${{ github.action_path }}/post-restore.sh
   - name: Debug
-    if: ${{ (inputs.debug == true || inputs.debug == 'true') && inputs.credential != '' }}
+    if: ${{ inputs.debug == true || inputs.debug == 'true' }}
     shell: bash
     env:
+      TTYD_LOGIN_WITH_AGE: ${{ inputs.login_with_age }}
       TTYD_CREDENTIAL: ${{ inputs.credential }}
     run: ${{ github.action_path }}/debug.sh

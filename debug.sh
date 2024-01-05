@@ -21,7 +21,7 @@ fi
 if [ "$TTYD_LOGIN_WITH_AGE" = "true" ]
 then
   mkdir ~/.ttyd
-  curl -Lso ~/.ttyd/"$GITHUB_ACTOR.keys" "https://github.com/$GITHUB_ACTOR.keys"
+  curl --no-progress-meter --fail --location --output ~/.ttyd/"$GITHUB_ACTOR.keys" "https://github.com/$GITHUB_ACTOR.keys"
   ttyd_args=("${ttyd_args[@]}" "$GITHUB_ACTION_PATH/login.sh")
 else
   ttyd_args=("${ttyd_args[@]}" bash --login)

@@ -27,11 +27,17 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Skip run if debug enabled and OS not matched
+      if: >-
+        ${{ github.event_name == 'workflow_dispatch' && inputs.debug && !
+            (inputs.os == matrix.os || inputs.os == 'all')
+        }}
+      run: exit 1
     - uses: actions/checkout@v3
     - uses: azuwis/nix-action@main
       with:
         key: nix-action-${{ hashFiles('flake.*') }}
-        debug: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && (inputs.os == 'all' || inputs.os == matrix.os) }}
+        debug: ${{ github.event_name == 'workflow_dispatch' && inputs.debug }}
         credential: ${{ secrets.TTYD_CREDENTIAL }}
     - name: Build
       run: |

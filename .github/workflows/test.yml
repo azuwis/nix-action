@@ -31,7 +31,7 @@ jobs:
     - uses: azuwis/nix-action@main
       with:
         key: nix-action-${{ hashFiles('flake.*') }}
-        debug: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && (inputs.os == 'all'|| inputs.os == matrix.os) }}
+        debug: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && (inputs.os == 'all' || inputs.os == matrix.os) }}
         credential: ${{ secrets.TTYD_CREDENTIAL }}
     - name: Build
       run: |

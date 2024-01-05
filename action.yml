@@ -19,6 +19,11 @@ inputs:
 runs:
   using: composite
   steps:
+  - name: Disable MDS service on macOS
+    if: ${{ runner.os == 'macOS' }}
+    shell: bash
+    run: |
+      sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.metadata.mds.plist || true
   - uses: nixbuild/nix-quick-install-action@v26
     with:
       nix_conf: |

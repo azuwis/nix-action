@@ -26,11 +26,7 @@ runs:
     shell: bash
     env:
       CACHE_KEY: ${{ inputs.key }}
-    run: |
-      mv -v /nix/store /nix/store.bak
-      mv -v /nix/var/nix/db/db.sqlite /nix/var/nix/db/db.sqlite.bak
-      echo "CACHE_KEY=$CACHE_KEY" >> $GITHUB_ENV
-      echo "CACHE_TIMESTAMP=$(date +%s)" >> $GITHUB_ENV
+    run: ${{ github.action_path }}/pre-restore.sh
   - uses: actions/cache/restore@v3
     with:
       key: ${{ env.CACHE_KEY }}-${{ runner.os }}-${{ env.CACHE_TIMESTAMP }}
@@ -41,50 +37,10 @@ runs:
         /nix/var/nix/db/db.sqlite
   - name: Post cache restore
     shell: bash
-    run: |
-      # Post cache restore
-      restore_bak() {
-        echo "restore bak"
-        mv -v /nix/store.bak /nix/store
-        mv -v /nix/var/nix/db/db.sqlite.bak /nix/var/nix/db/db.sqlite
-        echo "mark cache need update"
-        echo "CACHE_NEED_UPDATE=yes" >> $GITHUB_ENV
-      }
-      if [ -e /nix/store ]
-      then
-        echo "cache hit, try to restore nix"
-        nix="$(readlink /nix/var/nix-quick-install-action/nix)"
-        "$nix/bin/nix-env" -i "$nix"
-        if nix --version
-        then
-          echo "restore nix succeed"
-        else
-          echo "restore nix failed, discard cache"
-          mv -v /nix/store /nix/var/nix/db/db.sqlite /tmp
-          restore_bak
-        fi
-      else
-        echo "cache miss"
-        restore_bak
-      fi
+    run: ${{ github.action_path }}/post-restore.sh
   - name: Debug
     if: ${{ (inputs.debug == true || inputs.debug == 'true') && inputs.credential != '' }}
     shell: bash
     env:
       TTYD_CREDENTIAL: ${{ inputs.credential }}
-    run: |
-      # Debug
-      if [ -n "$TTYD_CREDENTIAL" ]
-      then
-        nixpkgs="https://github.com/NixOS/nixpkgs/archive/refs/heads/release-23.11.tar.gz"
-        nix-env -f $nixpkgs -iA cloudflared ttyd
-        cloudflared tunnel --url http://127.0.0.1:3456 2>&1 | tee /tmp/cloudflared.log &
-        ttyd --interface 127.0.0.1 --port 3456 --writable --once --credential "$TTYD_CREDENTIAL" bash --login &
-        while [ ! -f ../continue ]
-        do
-          sleep 10
-          grep -F '.trycloudflare.com' /tmp/cloudflared.log || true
-        done
-      else
-        echo "env TTYD_CREDENTIAL is empty, skip debug"
-      fi
+    run: ${{ github.action_path }}/debug.sh

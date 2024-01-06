@@ -1,0 +1,42 @@
+name: Test
+permissions: {}
+on:
+  pull_request:
+    paths-ignore:
+    - '**.md'
+  push:
+    paths-ignore:
+    - '**.md'
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: Enable debug
+        type: boolean
+        required: false
+        default: false
+      os:
+        description: Debug OS
+        required: true
+        type: choice
+        options: [ubuntu-latest, macos-latest, all]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Skip run if debug enabled and job not matched
+      if: >-
+        ${{ github.event_name == 'workflow_dispatch' && inputs.debug && !
+            (inputs.os == matrix.os || inputs.os == 'all')
+        }}
+      run: exit 1
+    - uses: actions/checkout@v3
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os }}-action
+        path: action.yml
+    - uses: azuwis/nix-action@download
+    - run: test -e ${{ matrix.os }}-action.zip
